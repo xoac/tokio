@@ -347,7 +347,12 @@ impl<T> DelayQueue<T> {
         };
 
         if should_set_delay {
-            self.delay = Some(self.handle.delay(self.start + Duration::from_millis(when)));
+            let delay_time = self.start + Duration::from_millis(when);
+            if let Some(ref mut delay) = &mut self.delay {
+                delay.reset(delay_time);
+            } else {
+                self.delay = Some(self.handle.delay(delay_time));
+            }
         }
 
         Key::new(key)
