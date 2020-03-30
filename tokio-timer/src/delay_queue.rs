@@ -504,11 +504,17 @@ impl<T> DelayQueue<T> {
     pub fn reset_at(&mut self, key: &Key, when: Instant) {
         self.wheel.remove(&key.index, &mut self.slab);
 
+        let old = self.start + Duration::from_millis(self.slab[key.index].when);
+
         // Normalize the deadline. Values cannot be set to expire in the past.
         let when = self.normalize_deadline(when);
 
         self.slab[key.index].when = when;
         self.insert_idx(when, key.index);
+
+        if let Some(ref mut delay) = &mut self.delay {
+            debug_assert!(old >= delay.deadline());
+        }
 
         let next_deadline = self.next_deadline();
         if let (Some(ref mut delay), Some(deadline)) = (&mut self.delay, next_deadline) {
